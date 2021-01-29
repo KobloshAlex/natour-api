@@ -1,3 +1,7 @@
 {
-  "singleQuote": true
+  "doubleQuote": true,
+  "editor.formatOnSave": false,
+  "[javascript]": {
+    "editor.formatOnSave": true
+  }
 }
