@@ -10,7 +10,7 @@ app.use(express.json());
 const API_ADDRESS = "/api/v1/tours";
 const API_ADDRESS_ID = "/api/v1/tours/:id";
 
-app.get(API_ADDRESS, (req, res) => {
+const getAllTours = (req, res) => {
   res.status(200).json({
     success: true,
     results: tours.length,
@@ -18,9 +18,9 @@ app.get(API_ADDRESS, (req, res) => {
       tours,
     },
   });
-});
+};
 
-app.post(API_ADDRESS, (req, res) => {
+const createTour = (req, res) => {
   const newId = tours[tours.length - 1].id + 1;
   const newTour = Object.assign({ id: newId }, req.body);
   tours.push(newTour);
@@ -39,9 +39,9 @@ app.post(API_ADDRESS, (req, res) => {
       console.log(err);
     }
   );
-});
+};
 
-app.get(API_ADDRESS_ID, (req, res) => {
+const getTourById = (req, res) => {
   const id = req.params.id * 1; //convert to number
   const tour = tours.find((element) => element.id === id);
 
@@ -58,9 +58,9 @@ app.get(API_ADDRESS_ID, (req, res) => {
       tour,
     },
   });
-});
+};
 
-app.patch(API_ADDRESS_ID, (req, res) => {
+const updateTour = (req, res) => {
   if (req.params.id * 1 > tours.length) {
     return res.status(404).json({
       success: false,
@@ -74,9 +74,9 @@ app.patch(API_ADDRESS_ID, (req, res) => {
       tour,
     },
   });
-});
+};
 
-app.delete(API_ADDRESS_ID, (req, res) => {
+const deleteTour = (req, res) => {
   if (req.params.id * 1 > tours.length) {
     return res.status(404).json({
       success: false,
@@ -88,7 +88,10 @@ app.delete(API_ADDRESS_ID, (req, res) => {
     success: true,
     data: null,
   });
-});
+};
+
+app.route(API_ADDRESS).get(getAllTours).post(createTour);
+app.route(API_ADDRESS_ID).get(getTourById).patch(updateTour).delete(deleteTour);
 
 const port = 3000;
 app.listen(port, () => console.log(`App running on port ${port}`));
