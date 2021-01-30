@@ -1,97 +1,24 @@
 const express = require("express");
 const app = express();
-const fs = require("fs");
+const morgan = require("morgan");
+const tourRouter = require("./routes/tourRoutes");
+const userRouter = require("./routes/userRoutes");
 
-const tours = JSON.parse(
-  fs.readFileSync(`${__dirname}/dev-data/data/tours-simple.json`)
-);
+const TOURS_PATH = "/api/v1/tours";
+const USERS_PATH = "/api/v1/users";
 
 app.use(express.json());
-const API_ADDRESS = "/api/v1/tours";
-const API_ADDRESS_ID = "/api/v1/tours/:id";
 
-const getAllTours = (req, res) => {
-  res.status(200).json({
-    success: true,
-    results: tours.length,
-    data: {
-      tours,
-    },
-  });
-};
+if (process.env.NODE_ENV === "development") {
+  app.use(morgan("dev"));
+}
 
-const createTour = (req, res) => {
-  const newId = tours[tours.length - 1].id + 1;
-  const newTour = Object.assign({ id: newId }, req.body);
-  tours.push(newTour);
+app.use((req, res, next) => {
+  req.requestTime = new Date().toISOString();
+  next();
+});
 
-  fs.writeFile(
-    `${__dirname}/dev-data/data/tours-simple.json`,
-    JSON.stringify(tours),
-    (err) => {
-      res.status(200).json({
-        success: true,
-        data: {
-          tour: newTour,
-        },
-      });
+app.use(TOURS_PATH, tourRouter);
+app.use(USERS_PATH, userRouter);
 
-      console.log(err);
-    }
-  );
-};
-
-const getTourById = (req, res) => {
-  const id = req.params.id * 1; //convert to number
-  const tour = tours.find((element) => element.id === id);
-
-  if (!tour) {
-    return res.status(404).json({
-      success: false,
-      message: "invalid ID",
-    });
-  }
-
-  res.status(200).json({
-    success: true,
-    data: {
-      tour,
-    },
-  });
-};
-
-const updateTour = (req, res) => {
-  if (req.params.id * 1 > tours.length) {
-    return res.status(404).json({
-      success: false,
-      message: "invalid ID",
-    });
-  }
-
-  res.status(200).json({
-    success: true,
-    data: {
-      tour,
-    },
-  });
-};
-
-const deleteTour = (req, res) => {
-  if (req.params.id * 1 > tours.length) {
-    return res.status(404).json({
-      success: false,
-      message: "invalid ID",
-    });
-  }
-
-  res.status(204).json({
-    success: true,
-    data: null,
-  });
-};
-
-app.route(API_ADDRESS).get(getAllTours).post(createTour);
-app.route(API_ADDRESS_ID).get(getTourById).patch(updateTour).delete(deleteTour);
-
-const port = 3000;
-app.listen(port, () => console.log(`App running on port ${port}`));
+module.exports = app;
