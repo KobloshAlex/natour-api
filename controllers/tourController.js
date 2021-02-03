@@ -1,4 +1,5 @@
 const Tour = require("../models/Tour");
+const APIFeatures = require("../utils/apiFiltering");
 
 exports.createTour = async (req, res) => {
   try {
@@ -20,7 +21,12 @@ exports.createTour = async (req, res) => {
 
 exports.getAllTours = async (req, res) => {
   try {
-    const tours = await Tour.find();
+    const feature = new APIFeatures(Tour.find(), req.query)
+      .filter()
+      .sort()
+      .limitFields()
+      .paginate();
+    const tours = await feature.query;
 
     res.status(200).json({
       success: true,
@@ -30,7 +36,6 @@ exports.getAllTours = async (req, res) => {
       },
     });
   } catch (error) {
-    console.log(error);
     res.status(404).json({
       success: false,
       message: "Fail to retrieve tours",
