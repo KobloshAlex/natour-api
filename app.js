@@ -25,11 +25,6 @@ app.use(USERS_PATH, userRouter);
 
 // Handle Unhandled URLs
 app.all("*", (req, res, next) => {
-  //res.status(404).json({
-  //  success: false,
-  //  message: `Can't find rout for URL: ${req.originalUrl}`,
-  //});
-
   next(new AppError(`Can't find rout for URL: ${req.originalUrl}`, 404));
 });
 
