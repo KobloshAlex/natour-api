@@ -1,5 +1,6 @@
 const express = require("express");
 const rateLimit = require("express-rate-limit");
+const helmet = require("helmet");
 const app = express();
 const morgan = require("morgan");
 const globalErrorHandler = require("./controllers/errorController");
@@ -10,6 +11,7 @@ const userRouter = require("./routes/userRoutes");
 const TOURS_PATH = "/api/v1/tours";
 const USERS_PATH = "/api/v1/users";
 
+//development logging
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
@@ -21,9 +23,14 @@ const limiter = rateLimit({
 });
 app.use("/api", limiter);
 
-app.use(express.json());
+app.use(helmet());
+
+//body parser
+app.use(express.json({ limit: "10kb" }));
+//serving static files
 app.use(express.static(`${__dirname}/public`));
 
+//Testing MW
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
   next();
