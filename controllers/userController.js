@@ -1,5 +1,16 @@
 const User = require("../models/User");
 const catchAsync = require("../utils/catchAsync");
+const AppError = require("../utils/appError");
+
+const findObject = (obj, ...allowedFields) => {
+  const newObj = {};
+  Object.keys(obj).forEach((element) => {
+    if (allowedFields.includes(element)) {
+      newObj[element] = obj[element];
+    }
+  });
+  return newObj;
+};
 
 exports.getAllUsers = catchAsync(async (req, res) => {
   const userList = await User.find();
@@ -7,6 +18,27 @@ exports.getAllUsers = catchAsync(async (req, res) => {
   res.status(200).json({
     success: true,
     users: userList,
+  });
+});
+
+exports.updateMe = catchAsync(async (req, res, next) => {
+  // create error if use post password data
+  if (req.body.password || req.body.passwordConfirm) {
+    return next(new AppError("You can not update password", 400));
+  }
+
+  const filteredBody = findObject(req.body, "name", "email");
+  // update user document
+  const updatedUser = await User.findByIdAndUpdate(req.user.id, filteredBody, {
+    new: true,
+    runValidators: true,
+  });
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      user: updatedUser,
+    },
   });
 });
 
