@@ -12,6 +12,18 @@ const signToken = (id) => {
   });
 };
 
+const createAndSendToken = (user, statusCode, res) => {
+  const token = signToken(user.id);
+
+  res.status(statusCode).json({
+    status: "success",
+    token,
+    data: {
+      user,
+    },
+  });
+};
+
 exports.signup = catchAsync(async (req, res, next) => {
   const newUser = await User.create({
     name: req.body.name,
@@ -21,15 +33,7 @@ exports.signup = catchAsync(async (req, res, next) => {
     passwordConfirm: req.body.passwordConfirm,
   });
 
-  const token = signToken(newUser._id);
-
-  res.status(201).json({
-    status: "success",
-    token,
-    data: {
-      user: newUser,
-    },
-  });
+  createAndSendToken(newUser, 201, res);
 });
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -45,11 +49,7 @@ exports.login = catchAsync(async (req, res, next) => {
     return next(new AppError("Incorrect email or password", 401));
   }
 
-  const token = signToken(user._id);
-  res.status(200).json({
-    success: true,
-    token,
-  });
+  createAndSendToken(user, 200, res);
 });
 
 exports.protect = catchAsync(async (req, res, next) => {
@@ -127,6 +127,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
     message: "token was sent to email",
   });
 });
+
 exports.resetPassword = catchAsync(async (req, res, next) => {
   const hashedToken = crypto.createHash("sha256").update(req.params.token).digest("hex");
 
@@ -145,10 +146,23 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 
   await user.save();
 
-  const token = signToken(user._id);
+  createAndSendToken(user, 201, res);
+});
 
-  res.status(200).json({
-    status: "success",
-    token,
-  });
+exports.updatePassword = catchAsync(async (req, res, next) => {
+  //get user from the collection
+  const user = await User.findById(req.user.id).select("+password");
+
+  //check if the posted password is correctPassword
+  if (!user.correctPassword(req.body.passwordCurrent, user.password)) {
+    return next(new AppError("Your current password is incorrect", 401));
+  }
+
+  //if password is correct - update password
+  user.password = req.body.password;
+  user.passwordConfirm = req.body.passwordConfirm;
+  await user.save();
+
+  //log the user in with new password
+  createAndSendToken(user, 201, res);
 });
