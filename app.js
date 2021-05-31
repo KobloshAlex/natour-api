@@ -1,12 +1,17 @@
 const express = require("express");
 const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
-const app = express();
 const morgan = require("morgan");
+const mongoSanitize = require("express-mongo-sanitize");
+const xss = require("xss-clean");
+const hpp = require("hpp");
+
 const globalErrorHandler = require("./controllers/errorController");
 const AppError = require("./utils/appError");
 const tourRouter = require("./routes/tourRoutes");
 const userRouter = require("./routes/userRoutes");
+
+const app = express();
 
 const TOURS_PATH = "/api/v1/tours";
 const USERS_PATH = "/api/v1/users";
@@ -27,6 +32,27 @@ app.use(helmet());
 
 //body parser
 app.use(express.json({ limit: "10kb" }));
+
+//data sanitization against NoSQL
+app.use(mongoSanitize());
+
+//data sanitization against XSS
+app.use(xss());
+
+//prevent param pollution
+app.use(
+  hpp({
+    whitelist: [
+      "duration",
+      "ratingsQuantity",
+      "ratingsAverage",
+      "maxGroupSize",
+      "difficult",
+      "price",
+    ],
+  })
+);
+
 //serving static files
 app.use(express.static(`${__dirname}/public`));
 
