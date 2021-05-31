@@ -2,7 +2,7 @@ const User = require("../models/User");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/appError");
 
-const findObject = (obj, ...allowedFields) => {
+const _findObject = (obj, ...allowedFields) => {
   const newObj = {};
   Object.keys(obj).forEach((element) => {
     if (allowedFields.includes(element)) {
@@ -27,7 +27,7 @@ exports.updateMe = catchAsync(async (req, res, next) => {
     return next(new AppError("You can not update password", 400));
   }
 
-  const filteredBody = findObject(req.body, "name", "email");
+  const filteredBody = _findObject(req.body, "name", "email");
   // update user document
   const updatedUser = await User.findByIdAndUpdate(req.user.id, filteredBody, {
     new: true,
@@ -39,6 +39,15 @@ exports.updateMe = catchAsync(async (req, res, next) => {
     data: {
       user: updatedUser,
     },
+  });
+});
+
+exports.deleteMe = catchAsync(async (req, res, next) => {
+  await User.findByIdAndUpdate(req.user.id, { active: false });
+
+  res.status(204).json({
+    status: "success",
+    data: null,
   });
 });
 

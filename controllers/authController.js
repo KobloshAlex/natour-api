@@ -6,14 +6,28 @@ const AppError = require("../utils/appError");
 const sendEmail = require("../utils/email");
 const crypto = require("crypto");
 
-const signToken = (id) => {
+const _signToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRATION,
   });
 };
 
-const createAndSendToken = (user, statusCode, res) => {
-  const token = signToken(user.id);
+const _createAndSendToken = (user, statusCode, res) => {
+  const token = _signToken(user.id);
+
+  const cookieOptions = {
+    expires: new Date(Date.now() + process.env.JWT_COOKIE_EXPIRATION * 24 * 60 * 60 * 1000),
+    httpOnly: true,
+  };
+
+  if (process.env.NODE_ENV === "production") {
+    cookieOptions.secure = true;
+  }
+
+  res.cookie("jwt", token, cookieOptions);
+
+  //remove password from output
+  user.password = undefined;
 
   res.status(statusCode).json({
     status: "success",
@@ -33,7 +47,7 @@ exports.signup = catchAsync(async (req, res, next) => {
     passwordConfirm: req.body.passwordConfirm,
   });
 
-  createAndSendToken(newUser, 201, res);
+  _createAndSendToken(newUser, 201, res);
 });
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -49,7 +63,7 @@ exports.login = catchAsync(async (req, res, next) => {
     return next(new AppError("Incorrect email or password", 401));
   }
 
-  createAndSendToken(user, 200, res);
+  _createAndSendToken(user, 200, res);
 });
 
 exports.protect = catchAsync(async (req, res, next) => {
@@ -146,7 +160,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 
   await user.save();
 
-  createAndSendToken(user, 201, res);
+  _createAndSendToken(user, 201, res);
 });
 
 exports.updatePassword = catchAsync(async (req, res, next) => {
@@ -164,5 +178,5 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   await user.save();
 
   //log the user in with new password
-  createAndSendToken(user, 201, res);
+  _createAndSendToken(user, 201, res);
 });
