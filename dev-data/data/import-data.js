@@ -1,12 +1,12 @@
 const dotenv = require("dotenv");
-dotenv.config({ path: "./config/config.env" });
+dotenv.config({ path: "../../config/.env" });
 const connectDB = require("../../utils/dbconnect");
 const fs = require("fs");
 const Tour = require("../../models/Tour");
 
 connectDB();
 
-const tours = JSON.parse(fs.readFileSync(`${__dirname}\\tours-simple.json`, "utf-8"));
+const tours = JSON.parse(fs.readFileSync(`${__dirname}\\tours.json`, "utf-8"));
 
 const importData = async () => {
   try {
